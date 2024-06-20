@@ -1,0 +1,13 @@
+
+{
+"Site": "Example Site",
+"Subscription": "Paid",
+"Execution Date and Time": datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+"Prod Url": "https://prod.example.com",
+"Stage Url": "https://stage.example.com",
+"Dev Url": "https://dev.example.com",
+"Browser": "Chrome",
+"Browser + ver.": f"Chrome {webdriver.Chrome().capabilities['browserVersion']}",
+"Platform": platform.system(),
+"Total Execution Time": f"{data['summary']['duration']} seconds"
+}

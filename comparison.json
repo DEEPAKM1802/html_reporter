@@ -1,0 +1,10 @@
+{
+  "site_name": {
+    "test_name":
+			{"status": "Passed"
+			},
+		"test_name2":
+			{"status": "Passed"
+			}
+		}
+}
