@@ -959,3 +959,143 @@ def main():
 
 if __name__ == "__main__":
     main()
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+##############################################################################################################################################################################################################
+import streamlit as st
+import pandas as pd
+from pathlib import Path
+import json
+from st_aggrid import AgGrid, GridOptionsBuilder, GridUpdateMode
+
+# Mock display_aggrid function (replace with your actual AG Grid display logic)
+def display_aggrid(data):
+    st.subheader("JSON Data")
+    AgGrid(data, height=300)
+
+# Path to the Results folder
+RESULTS_FOLDER = Path('./Result')
+
+# Function to scan the Results directory and gather JSON file information
+def get_json_files_info(results_folder):
+    file_info_list = []
+
+    # Iterate over each subscription folder
+    for subscription_folder in results_folder.iterdir():
+        if subscription_folder.is_dir():
+            subscription_name = subscription_folder.name
+
+            # Iterate over each datetime folder inside the subscription folder
+            for datetime_folder in subscription_folder.iterdir():
+                if datetime_folder.is_dir():
+                    datetime_value = datetime_folder.name
+
+                    # Check for environment folders (dev, prod, stage)
+                    for env_folder in datetime_folder.iterdir():
+                        if env_folder.is_dir() and env_folder.name in ['dev', 'prod', 'stage']:
+                            environment = env_folder.name
+
+                            # Look for JSON files in the environment folder
+                            for json_file in env_folder.glob('*.json'):
+                                file_info_list.append({
+                                    'Subscription': subscription_name,
+                                    'Environment': environment,
+                                    'DateTime': datetime_value,
+                                    'File Path': str(json_file.relative_to(results_folder)),
+                                    'View': 'Click to View'
+                                })
+
+    return pd.DataFrame(file_info_list)
+
+# Get JSON file information
+json_files_df = get_json_files_info(RESULTS_FOLDER)
+
+# Configure AG Grid
+gb = GridOptionsBuilder.from_dataframe(json_files_df)
+gb.configure_pagination(paginationAutoPageSize=True)  # Enable pagination
+gb.configure_side_bar()  # Enable sidebar for filters
+gb.configure_default_column(editable=False, groupable=True)
+
+# Configure the "View" column to be clickable without custom JS
+gb.configure_column(
+    "View",
+    header_name="View",
+    cellRenderer='agGroupCellRenderer',  # Use AG Grid's built-in group cell renderer
+    pinned='right'  # Pin the View column to the right for easy access
+)
+
+# Enable single-row selection (clicking the "View" text will select the row)
+gb.configure_selection(selection_mode="single", use_checkbox=False)
+
+grid_options = gb.build()
+
+# Display AG Grid
+st.title("Results Viewer")
+grid_response = AgGrid(
+    json_files_df,
+    gridOptions=grid_options,
+    update_mode=GridUpdateMode.SELECTION_CHANGED,  # Detect selection changes
+    height=400,
+    fit_columns_on_grid_load=True,
+)
+
+# Handle row selection (when "View" is clicked)
+selected_rows = grid_response['selected_rows']
+st.write(selected_rows)  # Debug: Show the selected rows
+
+# Check if selection is not empty
+if selected_rows is not None and len(selected_rows) > 0:
+    # Access the first selected row (Pandas DataFrame requires iloc)
+    selected_row = selected_rows.iloc[0]  # Correct way to access first row
+    st.write(selected_row)  # Debug: Show the first selected row
+
+    # Get file path from the selected row
+    selected_file_path = RESULTS_FOLDER / selected_row['File Path']
+    st.write(f"Selected File Path: {selected_file_path}")
+    st.success(f"Loading file: {selected_file_path.name}")
+
+    # Load and display JSON data
+    with open(selected_file_path, 'r') as file:
+        json_data = json.load(file)
+
+    display_aggrid(pd.json_normalize(json_data))
+else:
+    st.write("No file selected.")
+
+
