@@ -1,0 +1,33 @@
+import toml
+
+TOML_FILE = "config.toml"  # Update this with the correct path
+
+def update_toml_values(file_path):
+    # Load existing TOML data
+    with open(file_path, "r") as file:
+        data = toml.load(file)
+
+    updated = False  # Track if changes are made
+
+    # Check and update subscription name
+    if not data["subscription"].get("name"):
+        data["subscription"]["name"] = input("Enter subscription name: ") or "Default_Subscription"
+        updated = True
+
+    # Check and update environment URLs
+    for env in ["prod", "stage", "dev"]:
+        if "env" in data["subscription"] and env in data["subscription"]["env"]:
+            if not data["subscription"]["env"][env].get("url"):
+                data["subscription"]["env"][env]["url"] = input(f"Enter {env} URL: ") or f"https://{env}.example.com"
+                updated = True
+
+    # Write back only if updates were made
+    if updated:
+        with open(file_path, "w") as file:
+            toml.dump(data, file)
+        print("TOML file updated successfully.")
+    else:
+        print("No updates were needed.")
+
+# Run the function
+update_toml_values(TOML_FILE)
